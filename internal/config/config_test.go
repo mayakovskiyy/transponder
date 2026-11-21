@@ -234,6 +234,7 @@ func TestLoadRejects(t *testing.T) {
 		{name: "provider without name", body: "providers:\n  - type: echo\n", want: "providers[0]"},
 		{name: "duplicate provider", body: "providers:\n  - {name: a, type: echo}\n  - {name: a, type: echo}\n", want: `"a"`},
 		{name: "unknown provider type", body: "providers:\n  - {name: b, type: bedrock}\n", want: "bedrock"},
+		{name: "provider base URL without scheme", body: "providers:\n  - {name: no-scheme, type: openai, base_url: api.openai.com/v1}\nroutes:\n  - {match: '*', targets: [{provider: no-scheme}]}\n", want: "no-scheme"},
 		{name: "negative cooldown", body: "settings:\n  cooldown: -1s\n", want: "cooldown"},
 		{name: "negative cooldown failures", body: "settings:\n  cooldown_failures: -1\n", want: "cooldown_failures"},
 		{name: "negative attempt timeout", body: "settings:\n  attempt_timeout: -1s\n", want: "attempt_timeout"},
