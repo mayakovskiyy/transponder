@@ -8,9 +8,18 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 - `--config-test` now rejects invalid provider `base_url` values using the same rules as the admin API. The error names the provider without showing the URL.
 
+## [0.3.1] - 2026-11-21
+
 ### Changed
 
 - When every target of a route is rate limiting, answering 429 or Anthropic's 529, the caller gets 429 `upstream_rate_limited` with a `Retry-After` taken from the shortest wait the providers asked for, bounded to an hour, and one second when none gave one. It used to be a 502 `upstream_error`, which SDKs and Claude Code treat as a broken server and retry at once. The 502 for a route that mixed a rate limit with another failure no longer says no provider answered.
+- `listen_addr` and `ops_listen_addr` are checked when the config loads and by `--config-test`: a value that is not `host:port` with a port that is a number or a known service name, and two that would share a port on the same, empty or unspecified host, are refused with the key and the value in the message. They used to pass and stop the server at start with `missing port in address`, `invalid port`, `unknown port` or `address already in use`, which named neither.
+
+### Fixed
+
+- `POST /admin/v1/keys` refuses an `expires_at` that is not after now with 400 `invalid`, instead of minting a key that fails at first use. `PATCH` still accepts a past time to retire a key at once.
+- An OpenAI-dialect answer whose `content` is a list of parts, such as Mistral's reasoning models, is read instead of failing the call: text parts are joined in order and a part with nothing for the caller, such as a `thinking` part, is skipped. A streamed `delta.content` given as a list is read the same way, so the stream is no longer treated as cut (#180).
+- A token whose issuer differs from `auth.oidc.issuer` only by a trailing slash is still refused, but the reason now names the exact value and the setting to change. The gateway and the admin API log the hint once at warn level, and every refusal still at debug level (#173).
 
 ## [0.3.0] - 2026-11-21
 
@@ -223,7 +232,8 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 - A built-in price table for OpenAI models, so `X-Usage-Cost-USD` and the usage records carry real cost. Unpriced models are served at zero cost and logged as `unpriced`.
 - Usage headers on error responses too, at zero.
 
-[Unreleased]: https://github.com/raven-clown/transponder/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/raven-clown/transponder/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/raven-clown/transponder/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/raven-clown/transponder/compare/v0.2.4...v0.3.0
 [0.2.4]: https://github.com/raven-clown/transponder/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/raven-clown/transponder/compare/v0.2.2...v0.2.3
